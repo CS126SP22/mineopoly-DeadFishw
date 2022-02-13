@@ -20,7 +20,7 @@ public class MineopolyMain {
 
     public static void main(String[] args) {
         if (TEST_STRATEGY_WIN_PERCENT) {
-            MinePlayerStrategy yourStrategy = new RandomStrategy(); // TODO: Replace this with your strategy
+            MinePlayerStrategy yourStrategy = new MyStrategy(); //
             int[] assignmentBoardSizes = new int[]{14, 20, 26, 32};
 
             for (int testBoardSize : assignmentBoardSizes) {
@@ -37,10 +37,10 @@ public class MineopolyMain {
         final GameEngine gameEngine;
         if (savedReplayFilePath == null) {
             // Not viewing a replay, play a game with a GUI instead
-            MinePlayerStrategy redStrategy = new RandomStrategy(); // TODO: Replace this with your strategy
+            MinePlayerStrategy redStrategy = new MyStrategy();
             MinePlayerStrategy blueStrategy = new RandomStrategy();
             long randomSeed = System.currentTimeMillis();
-            gameEngine = new GameEngine(DEFAULT_BOARD_SIZE, redStrategy, blueStrategy, randomSeed);
+            gameEngine = new GameEngine(36, redStrategy, blueStrategy, randomSeed);
             gameEngine.setGuiEnabled(true);
         } else {
             // Showing a replay
@@ -70,13 +70,17 @@ public class MineopolyMain {
         int numRoundsWonByMinScore = 0;
         MinePlayerStrategy randomStrategy = new RandomStrategy();
 
-        /*
-         * TODO: Fill in the code here to play 1000 games and calculate your strategy's win percent
-         * Note that you should only count a win if your strategy scores enough points to win
-         *  by the minimum score. Do not count wins as scoring more than RandomStrategy() (which always scores 0)
-         */
+        for (int numRound = 0; numRound < numTotalRounds; numRound++) {
+            GameEngine gameEngine;
+            long randomSeed = System.currentTimeMillis();
+            gameEngine = new GameEngine(boardSize, yourStrategy, randomStrategy, randomSeed);
+            gameEngine.runGame();
+            if (gameEngine.getRedPlayer().getScore() > 30 * boardSize * boardSize) {
+                numRoundsWonByMinScore++;
+            }
+        }
 
-        throw new RuntimeException("Testing win percent not yet implemented"); // TODO: Delete this line
-        //return ((double) numRoundsWonByMinScore) / numTotalRounds; // TODO: Uncomment this line
+
+        return ((double) numRoundsWonByMinScore) / numTotalRounds;
     }
 }
