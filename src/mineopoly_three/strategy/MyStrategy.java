@@ -42,7 +42,6 @@ public class MyStrategy implements MinePlayerStrategy {
         this.currentTileLocation = startTileLocation;
         this.maxCharge = maxCharge;
         this.charge = maxCharge;
-        this.winningScore = winningScore;
         this.inventorySize = maxInventorySize;
         this.maxInventorySize = maxInventorySize;
         this.isRedPlayer = isRedPlayer;
