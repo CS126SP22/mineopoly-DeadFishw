@@ -13,38 +13,51 @@ import java.util.Random;
 
 public class MyStrategy implements MinePlayerStrategy {
     private int boardSize;
-    private int charge;
-    private int inventorySize;
+    private int currentCharge;
+    private int availableItemSlot;
     private PlayerBoardView board;
     private Point currentTileLocation;
     private boolean isRedPlayer;
     private int maxCharge;
     private int maxInventorySize;
 
-    /**
-     * Called at the start of every round
-     *
-     * @param boardSize         The length and width of the square game board
-     * @param maxInventorySize  The maximum number of items that your player can carry at one time
-     * @param maxCharge         The amount of charge your robot starts with (number of tile moves before needing to recharge)
-     * @param winningScore      The first player to reach this score wins the round
-     * @param startingBoard     A view of the GameBoard at the start of the game. You can use this to pre-compute fixed
-     *                          information, like the locations of market or recharge tiles
-     * @param startTileLocation A Point representing your starting location in (x, y) coordinates
-     *                          (0, 0) is the bottom left and (boardSize - 1, boardSize - 1) is the top right
-     * @param isRedPlayer       True if this strategy is the red player, false otherwise
-     * @param random            A random number generator, if your strategy needs random numbers you should use this.
-     */
     @Override
     public void initialize(int boardSize, int maxInventorySize, int maxCharge, int winningScore, PlayerBoardView startingBoard, Point startTileLocation, boolean isRedPlayer, Random random) {
         this.boardSize = boardSize;
         this.board = startingBoard;
         this.currentTileLocation = startTileLocation;
         this.maxCharge = maxCharge;
-        this.charge = maxCharge;
-        this.inventorySize = maxInventorySize;
+        this.currentCharge = maxCharge;
+        this.availableItemSlot = maxInventorySize;
         this.maxInventorySize = maxInventorySize;
         this.isRedPlayer = isRedPlayer;
+    }
+
+    @Override
+    public TurnAction getTurnAction(PlayerBoardView boardView, Economy economy, int currentCharge, boolean isRedTurn) {
+        this.board = boardView;
+        currentTileLocation = boardView.getYourLocation();
+        this.currentCharge = currentCharge;
+        if (needCharging()) {
+            return findRoute(TileType.RECHARGE);
+        }
+        if (availableItemSlot == 0) {
+            if (isRedPlayer) {
+                return findRoute(TileType.RED_MARKET);
+            } else {
+                return findRoute(TileType.BLUE_MARKET);
+            }
+        }
+        if (!boardView.getItemsOnGround().get(currentTileLocation).isEmpty()) {
+            if (boardView.getItemsOnGround().get(currentTileLocation).get(0).getItemType() != ItemType.AUTOMINER
+                    || boardView.getItemsOnGround().get(currentTileLocation).size() == 1) {
+                return TurnAction.PICK_UP_RESOURCE;
+            }
+        }
+        if (isResource(currentTileLocation)) {
+            return TurnAction.MINE;
+        }
+        return findRoute(TileType.EMPTY);
     }
 
     /**
@@ -67,39 +80,19 @@ public class MyStrategy implements MinePlayerStrategy {
         return null;
     }
 
-    @Override
-    public TurnAction getTurnAction(PlayerBoardView boardView, Economy economy, int currentCharge, boolean isRedTurn) {
-        this.board = boardView;
-        currentTileLocation = boardView.getYourLocation();
-        charge = currentCharge;
-        if (needCharging()) {
-            return getRoute(TileType.RECHARGE);
-        }
-        if (inventorySize == 0) {
-            if (isRedPlayer) {
-                return getRoute(TileType.RED_MARKET);
-            } else {
-                return getRoute(TileType.BLUE_MARKET);
-            }
-        }
-        if (!boardView.getItemsOnGround().get(currentTileLocation).isEmpty()) {
-            return TurnAction.PICK_UP_RESOURCE;
-        }
-        if (isResource(currentTileLocation)) {
-            return TurnAction.MINE;
-        }
-        return getRoute(TileType.EMPTY);
-    }
-
-    private Point getClosestResource() {
+    /**
+     * Get the clostest resource
+     * @return the position of closest resource
+     */
+    private Point findClosestResource() {
         Point nearest = new Point();
         int distance = 3 * boardSize;
         for (int x = 0; x < boardSize; x++) {
             for (int y = 0; y < boardSize; y++) {
                 if (isResource(new Point(x, y))) {
-                    if (distance > Math.abs(currentTileLocation.x - x) + Math.abs(currentTileLocation.y - y)) {
+                    if (distance > DistanceUtil.getManhattanDistance(new Point(x, y), currentTileLocation)) {
                         nearest = new Point(x, y);
-                        distance = Math.abs(currentTileLocation.x - x) + Math.abs(currentTileLocation.y - y);
+                        distance = DistanceUtil.getManhattanDistance(new Point(x, y), currentTileLocation);
                     }
                 }
             }
@@ -107,42 +100,71 @@ public class MyStrategy implements MinePlayerStrategy {
         return nearest;
     }
 
+    /**
+     * get if the location is a resource tile
+     * @param location location to check if it is resource tile
+     * @return true if the location is resource tile
+     */
     private boolean isResource(Point location) {
         return board.getTileTypeAtLocation(location).equals(TileType.RESOURCE_DIAMOND) ||
                 board.getTileTypeAtLocation(location).equals(TileType.RESOURCE_RUBY) ||
                 board.getTileTypeAtLocation(location).equals(TileType.RESOURCE_EMERALD);
     }
 
+    /**
+     * get if the bot needs charging
+     * @return true if the current charge is lower or equal to the number of moves to the station
+     */
     private boolean needCharging() {
         if (board.getTileTypeAtLocation(currentTileLocation).equals(TileType.RECHARGE)
-                                && charge != maxCharge) {
+                                && currentCharge != maxCharge) {
             return true;
         }
-        return charge <= Math.abs(currentTileLocation.x - boardSize / 2) +  Math.abs(currentTileLocation.y - boardSize / 2);
+        return currentCharge <= Math.abs(currentTileLocation.x - boardSize / 2) +
+                Math.abs(currentTileLocation.y - boardSize / 2);
     }
 
-    private TurnAction getRoute(TileType type) {
+    /**
+     * Find the TurnAction that goes towards the desired type of tile.
+     * @param type The type of tile to go to
+     * @return the TurnAction that goes towards the desired type of tile
+     */
+    private TurnAction findRoute(TileType type) {
         if (type.equals(TileType.RECHARGE)) {
+            if (board.getTileTypeAtLocation(currentTileLocation).equals(TileType.RECHARGE)) {
+                return null;
+            }
             return moveToTile(new Point(boardSize / 2, boardSize / 2));
         }
         if (type.equals(TileType.EMPTY)) {
-            return moveToTile(getClosestResource());
+            return moveToTile(findClosestResource());
         }
-        if (type == TileType.RED_MARKET) {
-            if (currentTileLocation.x < currentTileLocation.y) {
-                return moveToTile(new Point(boardSize / 4, boardSize * 3 / 4));
-            } else {
-                return moveToTile(new Point(boardSize * 3 / 4, boardSize / 4));
-            }
-        }
-        if (type == TileType.BLUE_MARKET) {
-            if (currentTileLocation.x + currentTileLocation.y < boardSize) {
-                return moveToTile(new Point(boardSize / 4, boardSize / 4));
-            } else {
-                return moveToTile(new Point(boardSize * 3 / 4, boardSize * 3 / 4));
-            }
+        if (type == TileType.RED_MARKET || type == TileType.BLUE_MARKET) {
+            return moveToTile(getCloserMarket());
         }
         return TurnAction.MOVE_DOWN;
+    }
+
+    private Point getCloserMarket() {
+        Point nearest = new Point();
+        int distance = 3 * boardSize;
+        TileType marketType;
+        if (isRedPlayer) {
+            marketType = TileType.RED_MARKET;
+        } else {
+            marketType = TileType.BLUE_MARKET;
+        }
+        for (int x = 0; x < boardSize; x++) {
+            for (int y = 0; y < boardSize; y++) {
+                if (board.getTileTypeAtLocation(new Point(x, y)) == marketType) {
+                    if (distance > DistanceUtil.getManhattanDistance(new Point(x, y), currentTileLocation)) {
+                        nearest = new Point(x, y);
+                        distance = DistanceUtil.getManhattanDistance(new Point(x, y), currentTileLocation);
+                    }
+                }
+            }
+        }
+        return nearest;
     }
 
     /**
@@ -153,7 +175,7 @@ public class MyStrategy implements MinePlayerStrategy {
      */
     @Override
     public void onReceiveItem(InventoryItem itemReceived) {
-        inventorySize--;
+        availableItemSlot--;
     }
 
     /**
@@ -164,7 +186,7 @@ public class MyStrategy implements MinePlayerStrategy {
      */
     @Override
     public void onSoldInventory(int totalSellPrice) {
-        inventorySize = maxInventorySize;
+        availableItemSlot = maxInventorySize;
     }
 
     /**
@@ -187,6 +209,7 @@ public class MyStrategy implements MinePlayerStrategy {
      */
     @Override
     public void endRound(int pointsScored, int opponentPointsScored) {
-
+        this.currentCharge = maxCharge;
+        this.availableItemSlot = maxInventorySize;
     }
 }
