@@ -170,46 +170,21 @@ public class MyStrategy implements MinePlayerStrategy {
         return nearest;
     }
 
-    /**
-     * Called when the player receives an item from performing a TurnAction that gives an item.
-     * At the moment this is only from using PICK_UP on top of a mined resource
-     *
-     * @param itemReceived The item received from the player's TurnAction on their last turn
-     */
     @Override
     public void onReceiveItem(InventoryItem itemReceived) {
         availableItemSlot--;
     }
 
-    /**
-     * Called when the player steps on a market tile with items to sell. Tells your strategy how much all
-     * of the items sold for.
-     *
-     * @param totalSellPrice The combined sell price for all items in your strategy's inventory
-     */
     @Override
     public void onSoldInventory(int totalSellPrice) {
         availableItemSlot = maxInventorySize;
     }
 
-    /**
-     * Gets the name of this strategy. The amount of characters that can actually be displayed on a screen varies,
-     * although by default at screen size 750 it's about 16-20 characters depending on character size
-     *
-     * @return The name of your strategy for use in the competition and rendering the scoreboard on the GUI
-     */
     @Override
     public String getName() {
         return "i11usion";
     }
 
-    /**
-     * Called at the end of every round to let players reset, and tell them how they did if the strategy does not
-     * track that for itself
-     *
-     * @param pointsScored         The total number of points this strategy scored
-     * @param opponentPointsScored The total number of points the opponent's strategy scored
-     */
     @Override
     public void endRound(int pointsScored, int opponentPointsScored) {
         this.currentCharge = maxCharge;
