@@ -4,7 +4,6 @@ import mineopoly_three.action.TurnAction;
 import mineopoly_three.game.Economy;
 import mineopoly_three.item.InventoryItem;
 import mineopoly_three.item.ItemType;
-import mineopoly_three.tiles.Tile;
 import mineopoly_three.tiles.TileType;
 import mineopoly_three.util.DistanceUtil;
 
@@ -140,12 +139,16 @@ public class MyStrategy implements MinePlayerStrategy {
             return moveToTile(findClosestResource());
         }
         if (type == TileType.RED_MARKET || type == TileType.BLUE_MARKET) {
-            return moveToTile(getCloserMarket());
+            return moveToTile(findCloserMarket());
         }
         return TurnAction.MOVE_DOWN;
     }
 
-    private Point getCloserMarket() {
+    /**
+     * get the position of the closer market
+     * @return the position of the closer market
+     */
+    private Point findCloserMarket() {
         Point nearest = new Point();
         int distance = 3 * boardSize;
         TileType marketType;
