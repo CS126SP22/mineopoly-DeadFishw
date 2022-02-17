@@ -1,16 +1,18 @@
-package mineopoly_three.strategy;
+package mineopoly_three.competition; // This is the "competition" package
 
 import mineopoly_three.action.TurnAction;
 import mineopoly_three.game.Economy;
 import mineopoly_three.item.InventoryItem;
 import mineopoly_three.item.ItemType;
+import mineopoly_three.strategy.MinePlayerStrategy;
+import mineopoly_three.strategy.PlayerBoardView;
 import mineopoly_three.tiles.TileType;
 import mineopoly_three.util.DistanceUtil;
 
 import java.awt.*;
 import java.util.Random;
 
-public class MyStrategy implements MinePlayerStrategy {
+public class TomoyoshiGodStrategy implements MinePlayerStrategy {
     private int boardSize;
     private int currentCharge;
     private int availableItemSlot;
@@ -116,7 +118,7 @@ public class MyStrategy implements MinePlayerStrategy {
      */
     private boolean needCharging() {
         if (board.getTileTypeAtLocation(currentTileLocation).equals(TileType.RECHARGE)
-                                && currentCharge != maxCharge) {
+                && currentCharge != maxCharge) {
             return true;
         }
         return currentCharge <= Math.abs(currentTileLocation.x - boardSize / 2) +
@@ -185,7 +187,7 @@ public class MyStrategy implements MinePlayerStrategy {
 
     @Override
     public String getName() {
-        return "i11usion";
+        return "TonyIsGod";
     }
 
     @Override
